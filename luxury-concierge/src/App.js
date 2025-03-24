@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import CoupleDatesPage from "./pages/CoupleDatesPage";
 import PrivateRoute from "./components/PrivateRoute";
 import AuthProvider from "./context/AuthContext";
+import "./App.css";
 
 function App() {
   return (
