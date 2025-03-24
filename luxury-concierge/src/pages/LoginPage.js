@@ -1,16 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Auth.css";
+import { AuthContext } from "../context/AuthContext"; // Import AuthContext
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext); // Use login function from context
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // TODO: Implement authentication logic
-    navigate("/home");
+    try {
+      const response = await fetch('http://localhost:5002/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Login successful:', data.message);
+        login(data.user); // Store user data in context
+        navigate("/home");
+      } else {
+        console.error('Login failed:', data.message);
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('An error occurred during login.');
+    }
   };
 
   return (

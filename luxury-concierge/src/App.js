@@ -6,13 +6,10 @@ import RegisterPage from "./pages/RegisterPage";
 import HomePage from "./pages/HomePage";
 import CoupleDatesPage from "./pages/CoupleDatesPage";
 import PrivateRoute from "./components/PrivateRoute";
-import AuthProvider from "./context/AuthContext";
 import "./App.css";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -22,8 +19,6 @@ function App() {
             <Route path="/couple-dates" element={<CoupleDatesPage />} />
           </Route>
         </Routes>
-      </Router>
-    </AuthProvider>
   );
 }
 

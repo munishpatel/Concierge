@@ -9,10 +9,30 @@ const RegisterPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    // TODO: Implement registration logic
-    navigate("/login");
+    try {
+      const response = await fetch('http://localhost:5002/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, phone, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Registration successful:', data.message);
+        navigate('/login');
+      } else {
+        console.error('Registration failed:', data.message);
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('An error occurred during registration.');
+    }
   };
 
   return (
