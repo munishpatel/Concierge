@@ -38,4 +38,49 @@
     padding: 10px;
     border-radius: 5px;
   }
+
+  .restaurant-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .restaurant-item {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-align: center;
+  }
+
+  .restaurant-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-bottom: 10px;
+    border-radius: 5px;
+  }
+
+  .restaurant-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin-top: 5px;
+}
+
+.reserve-button {
+  margin-top: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.reserve-button:hover {
+  background-color: #45a049;
+}
   

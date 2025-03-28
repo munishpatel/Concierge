@@ -1,8 +1,9 @@
-// backend/server.js
 const express = require('express');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
+const http = require('http'); // Import HTTP module
+const WebSocket = require('ws'); // Import WebSocket module
 
 const app = express();
 const port = 5002;
@@ -20,6 +21,16 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
+
+// Hardcoded restaurant data
+let restaurants = [
+  { id: 1, name: "Restaurant A", image: "/images/image1.jpeg", reserved: false },
+  { id: 2, name: "Restaurant B", image: "/images/image2.jpeg", reserved: false },
+  { id: 3, name: "Restaurant C", image: "/images/image3.jpeg", reserved: false },
+  { id: 4, name: "Restaurant D", image: "/images/image4.jpeg", reserved: false },
+  { id: 5, name: "Restaurant E", image: "/images/image5.jpeg", reserved: false },
+  { id: 6, name: "Restaurant F", image: "/images/image6.jpeg", reserved: false },
+];
 
 // Register Route
 app.post('/register', async (req, res) => {
@@ -72,7 +83,48 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+// Fetch available restaurants
+app.get("/api/restaurants", (req, res) => {
+    res.json(restaurants);
 });
 
+// Create HTTP server and WebSocket server
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server }); // Attach WebSocket server to HTTP server
+
+// WebSocket connection
+wss.on("connection", (ws) => {
+  console.log("New client connected");
+
+  ws.on("message", (message) => {
+    const { type, restaurantName } = JSON.parse(message);
+
+    if (type === "RESERVE") {
+      // Update restaurant reservation status
+      restaurants = restaurants.map((restaurant) =>
+        restaurant.name === restaurantName
+          ? { ...restaurant, reserved: true }
+          : restaurant
+      );
+
+      // Broadcast updated restaurant list to all clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(restaurants));
+        }
+      });
+    }
+  });
+
+  // Send initial restaurant list to the client
+  ws.send(JSON.stringify(restaurants));
+
+  ws.on("close", () => {
+    console.log("Client disconnected");
+  });
+});
+
+// Start the server
+server.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
+});
