@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
+const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const http = require('http'); // Import HTTP module
@@ -10,17 +10,24 @@ const port = 5002;
 
 app.use(cors());
 app.use(express.json());
+app.use('/images', express.static('images'));
 
-// MySQL Connection Configuration
-const pool = mysql.createPool({
-  host: 'localhost', // or your MySQL host
-  user: 'root',
-  password: 'admin@2024',
-  database: 'Concierge',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+// SQLite Database Connection
+const db = new sqlite3.Database('./concierge.db', (err) => {
+  if (err) console.error('Error opening database:', err.message);
+  else console.log('Connected to SQLite database.'); 
 });
+
+// Create users table if not exists
+db.run(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+  )
+`);
 
 // Hardcoded restaurant data
 let restaurants = [
@@ -38,20 +45,21 @@ app.post('/register', async (req, res) => {
     const { name, phone, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const [existingUser] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
+      if (existingUser) return res.status(400).json({ message: 'Email already exists' });
 
-    if (existingUser.length > 0) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
-
-    await pool.query('INSERT INTO users (name, phone, email, password) VALUES (?, ?, ?, ?)', [
-      name,
-      phone,
-      email,
-      hashedPassword,
-    ]);
-
-    res.status(201).json({ message: 'User registered successfully' });
+      db.run(
+        'INSERT INTO users (name, phone, email, password) VALUES (?, ?, ?, ?)',
+        [name, phone, email, hashedPassword],
+        (insertErr) => {
+          if (insertErr) {
+            console.error('Error inserting user:', insertErr);
+            return res.status(500).json({ message: 'Internal server error' });
+          }
+          res.status(201).json({ message: 'User registered successfully' });
+        }
+      );
+    });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -59,33 +67,26 @@ app.post('/register', async (req, res) => {
 });
 
 // Login Route
-app.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
 
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    if (users.length === 0) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const user = users[0];
     const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    if (!passwordMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
     res.status(200).json({ message: 'Login successful', user: { id: user.id, name: user.name, email: user.email } });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
+  });
 });
 
 // Fetch available restaurants
 app.get("/api/restaurants", (req, res) => {
-    res.json(restaurants);
+  const updatedRestaurants = restaurants.map(restaurant => ({
+      ...restaurant,
+      image: `http://localhost:${port}${restaurant.image}`, // Ensure full URL
+  }));
+  res.json(updatedRestaurants);
 });
 
 // Create HTTP server and WebSocket server

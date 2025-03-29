@@ -10,9 +10,10 @@ const CoupleDatesPage = () => {
 
   useEffect(() => {
     // Fetch initial restaurant data
-    fetch("/api/restaurants")
+    fetch("http://localhost:5002/api/restaurants")
       .then((response) => response.json())
-      .then((data) => setRestaurants(data));
+      .then((data) => setRestaurants(data))
+      .catch((error) => console.error("Error fetching restaurants:", error));
 
     // Connect to WebSocket server
     const ws = new WebSocket("ws://localhost:5002");
