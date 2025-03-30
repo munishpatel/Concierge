@@ -1,0 +1,244 @@
+/* Modern color scheme */
+:root {
+  --primary: #ff6b6b;
+  --secondary: #ff8e8e;
+  --accent: #ffd166;
+  --dark: #4a4a4a;
+  --light: #f8f9fa;
+  --success: #06d6a0;
+}
+
+/* Base styles */
+.coupleDatesContainer {
+  text-align: center;
+  padding: 2rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.header h2 {
+  color: var(--dark);
+  font-size: 2rem;
+  margin: 0;
+}
+
+.heartIcon {
+  color: var(--primary);
+  font-size: 1.5rem;
+}
+
+/* Surprise button animation */
+.surpriseSection {
+  position: relative;
+  margin: 2rem auto;
+  max-width: 800px;
+}
+
+.surpriseButton {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin: 0 auto;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.surpriseButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.surpriseButton:active {
+  transform: translateY(1px);
+}
+
+.giftIcon {
+  font-size: 1.5rem;
+}
+
+/* Opening animation */
+.surpriseButton.opening {
+  animation: pulse 1.5s infinite, shake 0.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  0% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+  100% { transform: rotate(-5deg); }
+}
+
+/* Surprise box reveal */
+.surpriseBox {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.congratulations {
+  background: linear-gradient(135deg, #fff8f8 0%, #fff 100%);
+  padding: 1.5rem;
+  border-radius: 15px;
+  margin-bottom: 2rem;
+  border: 1px dashed var(--primary);
+}
+
+.congratulations h3 {
+  color: var(--primary);
+  font-size: 1.8rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.congratulations p {
+  color: var(--dark);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.cheersIcon {
+  color: var(--accent);
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Restaurant grid */
+.restaurantGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.restaurantCard {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.restaurantCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.imageContainer {
+  position: relative;
+  height: 180px;
+  overflow: hidden;
+}
+
+.restaurantImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.restaurantCard:hover .restaurantImage {
+  transform: scale(1.05);
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+}
+
+.restaurantInfo {
+  padding: 1.2rem;
+}
+
+.restaurantName {
+  color: var(--dark);
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+}
+
+.reserveButton {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  margin-top: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.reserveButton:hover {
+  background: #05c293;
+  transform: translateY(-2px);
+}
+
+/* Confetti effect */
+.confetti {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="%23ff6b6b"/></svg>'),
+                  url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="%23ffd166"/></svg>'),
+                  url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="%2306d6a0"/></svg>');
+  background-size: 15px 15px;
+  animation: confetti 3s ease-out;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes confetti {
+  0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .restaurantGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .congratulations h3 {
+    font-size: 1.5rem;
+  }
+}

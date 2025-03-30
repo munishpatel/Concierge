@@ -1,5 +1,5 @@
 :root {
-  --primary: #1a1a2e;
+  --hp--primary: #1a1a2e;
   --secondary: #16213e;
   --accent: #f8bb22;
   --accent-dark: #e6a91e;
@@ -108,7 +108,7 @@
 
 .welcomeBanner h1 {
   font-size: 2rem;
-  color: var(--primary);
+  color: var(--hp--primary);
   margin-bottom: 0.5rem;
 }
 
@@ -162,7 +162,7 @@
 
 .serviceCard h3 {
   font-size: 1.25rem;
-  color: var(--primary);
+  color: var(--hp--primary);
   margin-bottom: 0.5rem;
 }
 
@@ -176,7 +176,7 @@
   display: inline-block;
   padding: 0.5rem 1.5rem;
   background-color: var(--accent);
-  color: var(--primary);
+  color: var(--hp--primary);
   border-radius: 30px;
   text-decoration: none;
   font-weight: 600;

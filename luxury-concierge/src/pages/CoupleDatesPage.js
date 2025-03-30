@@ -1,80 +1,111 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/CoupleDatesPage.css";
+import { FaHeart, FaGift, FaGlassCheers } from "react-icons/fa";
+import styles from "../styles/CoupleDatesPage.module.css";
 
 const CoupleDatesPage = () => {
   const [restaurants, setRestaurants] = useState([]);
-  const [showSurprise, setShowSurprise] = useState(false); // State for surprise box
+  const [showSurprise, setShowSurprise] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    // Fetch initial restaurant data
     fetch("http://localhost:5002/api/restaurants")
       .then((response) => response.json())
       .then((data) => setRestaurants(data))
       .catch((error) => console.error("Error fetching restaurants:", error));
 
-    // Connect to WebSocket server
     const ws = new WebSocket("ws://localhost:5002");
     setSocket(ws);
 
-    // Listen for updates from the server
     ws.onmessage = (event) => {
       const updatedRestaurants = JSON.parse(event.data);
       setRestaurants(updatedRestaurants);
     };
 
-    // Cleanup WebSocket connection on component unmount
     return () => ws.close();
   }, []);
 
   const handleSurpriseClick = () => {
-    setShowSurprise(true); // Show the surprise box
+    setIsOpening(true);
+    setTimeout(() => {
+      setShowSurprise(true);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+    }, 1500);
   };
 
   const handleReserveClick = (restaurantName) => {
     if (socket) {
-      // Send reservation request to the server
       socket.send(JSON.stringify({ type: "RESERVE", restaurantName }));
     }
 
     alert(
       `Your reservation with ${restaurantName} is confirmed. You will receive the details in your mail. Thank you for choosing us.`
     );
-    navigate("/home"); // Redirect to homepage
+    navigate("/home");
   };
 
   return (
-    <div className="couple-dates-container">
-      <h2>Plan Your Romantic Date</h2>
-      <button onClick={handleSurpriseClick}>Open the Surprise Box</button>
+    <div className={styles.coupleDatesContainer}>
+      <div className={styles.header}>
+        <FaHeart className={styles.heartIcon} />
+        <h2>Plan Your Romantic Date</h2>
+        <FaHeart className={styles.heartIcon} />
+      </div>
 
-      {showSurprise && (
-        <div className="surprise-box">
-          <h3>Available Reservations at Restaurants:</h3>
-          <div className="restaurant-grid">
-            {restaurants
-              .filter((restaurant) => !restaurant.reserved) // Show only available restaurants
-              .map((restaurant, index) => (
-                <div key={index} className="restaurant-item">
-                  <img
-                    src={restaurant.image}
-                    alt={restaurant.name}
-                    className="restaurant-image"
-                  />
-                  <div className="restaurant-name">{restaurant.name}</div>
-                  <button
-                    className="reserve-button"
-                    onClick={() => handleReserveClick(restaurant.name)}
-                  >
-                    Reserve
-                  </button>
-                </div>
-              ))}
+      <div className={styles.surpriseSection}>
+        {!showSurprise && (
+          <button
+            className={`${styles.surpriseButton} ${isOpening ? styles.opening : ''}`}
+            onClick={handleSurpriseClick}
+            disabled={isOpening}
+          >
+            <FaGift className={styles.giftIcon} />
+            {isOpening ? "Opening..." : "Open the Surprise Box"}
+          </button>
+        )}
+
+        {showConfetti && <div className={styles.confetti}></div>}
+
+        {showSurprise && (
+          <div className={styles.surpriseBox}>
+            <div className={styles.congratulations}>
+              <FaGlassCheers className={styles.cheersIcon} />
+              <h3>Congratulations!</h3>
+              <p>For today's surprise date, you're going out to a restaurant!</p>
+            </div>
+            <h4>Available Reservations:</h4>
+            <div className={styles.restaurantGrid}>
+              {restaurants
+                .filter((restaurant) => !restaurant.reserved)
+                .map((restaurant, index) => (
+                  <div key={index} className={styles.restaurantCard}>
+                    <div className={styles.imageContainer}>
+                      <img
+                        src={restaurant.image}
+                        alt={restaurant.name}
+                        className={styles.restaurantImage}
+                      />
+                      <div className={styles.overlay}></div>
+                    </div>
+                    <div className={styles.restaurantInfo}>
+                      <h5 className={styles.restaurantName}>{restaurant.name}</h5>
+                      <button
+                        className={styles.reserveButton}
+                        onClick={() => handleReserveClick(restaurant.name)}
+                      >
+                        Reserve Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
