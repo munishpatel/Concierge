@@ -93,6 +93,10 @@ const CoupleDatesPage = () => {
                         src={restaurant.image}
                         alt={restaurant.name}
                         className={styles.restaurantImage}
+                        onError={(e) => {
+                          e.target.onerror = null; // Prevent infinite loop if fallback fails
+                          e.target.src = '/images/image1.jpeg'; // Fallback image from public folder
+                        }}
                       />
                       <div className={styles.overlay}></div>
                     </div>
