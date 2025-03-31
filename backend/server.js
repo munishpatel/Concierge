@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5002;
 
 app.use(cors());
 app.use(express.json());
-app.use('/images', express.static('images'));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // PostgreSQL Database Connection
 const pool = new Pool({
@@ -27,12 +27,12 @@ pool.query('SELECT NOW()', (err) => {
 
 // Hardcoded restaurant data
 let restaurants = [
-  { id: 1, name: "Restaurant A", image: "/images/image1.jpeg", reserved: false },
-  { id: 2, name: "Restaurant B", image: "/images/image2.jpeg", reserved: false },
-  { id: 3, name: "Restaurant C", image: "/images/image3.jpeg", reserved: false },
-  { id: 4, name: "Restaurant D", image: "/images/image4.jpeg", reserved: false },
-  { id: 5, name: "Restaurant E", image: "/images/image5.jpeg", reserved: false },
-  { id: 6, name: "Restaurant F", image: "/images/image6.jpeg", reserved: false },
+  { id: 1, name: "Olive Bistro", image: "/images/image1.jpeg", reserved: false },
+  { id: 2, name: "Tabula Rasa", image: "/images/image2.jpeg", reserved: false },
+  { id: 3, name: "Prism Kitchen", image: "/images/image3.jpeg", reserved: false },
+  { id: 4, name: "XORA Dining", image: "/images/image4.jpeg", reserved: false },
+  { id: 5, name: "Block 22", image: "/images/image5.jpeg", reserved: false },
+  { id: 6, name: "Artistry", image: "/images/image6.jpeg", reserved: false },
 ];
 
 // Register Route (Updated for PostgreSQL)
@@ -97,11 +97,13 @@ app.post('/login', async (req, res) => {
 
 // Fetch available restaurants (Updated URL construction)
 app.get("/api/restaurants", (req, res) => {
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-  const host = req.headers['x-forwarded-host'] || req.get('host');
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? 'https://concierge-yyeh.onrender.com'  // Your production URL
+    : `http://localhost:${PORT}`;
+  
   const updatedRestaurants = restaurants.map(restaurant => ({
     ...restaurant,
-    image: `${protocol}://${host}${restaurant.image}`,
+    image: `${baseUrl}${restaurant.image}`,
   }));
   res.json(updatedRestaurants);
 });
