@@ -17,7 +17,7 @@ const CoupleDatesPage = () => {
       .then((data) => setRestaurants(data))
       .catch((error) => console.error("Error fetching restaurants:", error));
 
-    const ws = new WebSocket("ws://localhost:5002");
+    const ws = new WebSocket("ws://localhost:5002/ws");
     setSocket(ws);
 
     ws.onmessage = (event) => {

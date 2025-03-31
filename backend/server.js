@@ -1,33 +1,29 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg'); // Changed from sqlite3 to pg
 const bcrypt = require('bcrypt');
 const cors = require('cors');
-const http = require('http'); // Import HTTP module
-const WebSocket = require('ws'); // Import WebSocket module
+const http = require('http');
+const WebSocket = require('ws');
+const path = require('path');
 
 const app = express();
-const port = 5002;
+const PORT = process.env.PORT || 5002;
 
 app.use(cors());
 app.use(express.json());
 app.use('/images', express.static('images'));
 
-// SQLite Database Connection
-const db = new sqlite3.Database('./concierge.db', (err) => {
-  if (err) console.error('Error opening database:', err.message);
-  else console.log('Connected to SQLite database.'); 
+// PostgreSQL Database Connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false, require: true } : false, 
 });
 
-// Create users table if not exists
-db.run(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
-  )
-`);
+// Test database connection
+pool.query('SELECT NOW()', (err) => {
+  if (err) console.error('Error connecting to PostgreSQL:', err);
+  else console.log('Connected to PostgreSQL database');
+});
 
 // Hardcoded restaurant data
 let restaurants = [
@@ -39,81 +35,109 @@ let restaurants = [
   { id: 6, name: "Restaurant F", image: "/images/image6.jpeg", reserved: false },
 ];
 
-// Register Route
+// Register Route (Updated for PostgreSQL)
 app.post('/register', async (req, res) => {
   try {
     const { name, phone, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
-      if (existingUser) return res.status(400).json({ message: 'Email already exists' });
+    // Check if user exists
+    const userCheck = await pool.query(
+      'SELECT * FROM users WHERE email = $1', 
+      [email]
+    );
 
-      db.run(
-        'INSERT INTO users (name, phone, email, password) VALUES (?, ?, ?, ?)',
-        [name, phone, email, hashedPassword],
-        (insertErr) => {
-          if (insertErr) {
-            console.error('Error inserting user:', insertErr);
-            return res.status(500).json({ message: 'Internal server error' });
-          }
-          res.status(201).json({ message: 'User registered successfully' });
-        }
-      );
-    });
+    if (userCheck.rows.length > 0) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+
+    // Insert new user
+    await pool.query(
+      'INSERT INTO users (name, phone, email, password) VALUES ($1, $2, $3, $4)',
+      [name, phone, email, hashedPassword]
+    );
+
+    res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Login Route
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
+// Login Route (Updated for PostgreSQL)
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    const userResult = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
 
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const user = userResult.rows[0];
     const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
-    res.status(200).json({ message: 'Login successful', user: { id: user.id, name: user.name, email: user.email } });
-  });
+    res.status(200).json({ 
+      message: 'Login successful', 
+      user: { id: user.id, name: user.name, email: user.email } 
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
-// Fetch available restaurants
+// Fetch available restaurants (Updated URL construction)
 app.get("/api/restaurants", (req, res) => {
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.headers['x-forwarded-host'] || req.get('host');
   const updatedRestaurants = restaurants.map(restaurant => ({
-      ...restaurant,
-      image: `http://localhost:${port}${restaurant.image}`, // Ensure full URL
+    ...restaurant,
+    image: `${protocol}://${host}${restaurant.image}`,
   }));
   res.json(updatedRestaurants);
 });
 
 // Create HTTP server and WebSocket server
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server }); // Attach WebSocket server to HTTP server
+const wss = new WebSocket.Server({ 
+  server,
+  path: "/ws" // Explicit WebSocket path
+});
 
 // WebSocket connection
 wss.on("connection", (ws) => {
   console.log("New client connected");
 
   ws.on("message", (message) => {
-    const { type, restaurantName } = JSON.parse(message);
+    try {
+      const { type, restaurantName } = JSON.parse(message);
 
-    if (type === "RESERVE") {
-      // Update restaurant reservation status
-      restaurants = restaurants.map((restaurant) =>
-        restaurant.name === restaurantName
-          ? { ...restaurant, reserved: true }
-          : restaurant
-      );
+      if (type === "RESERVE") {
+        // Update restaurant reservation status
+        restaurants = restaurants.map((restaurant) =>
+          restaurant.name === restaurantName
+            ? { ...restaurant, reserved: true }
+            : restaurant
+        );
 
-      // Broadcast updated restaurant list to all clients
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(restaurants));
-        }
-      });
+        // Broadcast updated restaurant list to all clients
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(restaurants));
+          }
+        });
+      }
+    } catch (err) {
+      console.error('WebSocket message error:', err);
     }
   });
 
@@ -126,6 +150,19 @@ wss.on("connection", (ws) => {
 });
 
 // Start the server
-server.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`HTTP: http://localhost:${PORT}`);
+    console.log(`WebSocket: ws://localhost:${PORT}/ws`);
+  }
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  server.close(() => {
+    pool.end();
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
