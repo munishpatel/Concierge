@@ -12,12 +12,17 @@ const CoupleDatesPage = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5002/api/restaurants")
+    fetch("https://concierge-yyeh.onrender.com/api/restaurants")
       .then((response) => response.json())
       .then((data) => setRestaurants(data))
       .catch((error) => console.error("Error fetching restaurants:", error));
 
-    const ws = new WebSocket("ws://localhost:5002/ws");
+    // Correct WebSocket connection with explicit path
+    const wsUrl = process.env.NODE_ENV === 'production' 
+      ? `wss://https://concierge-yyeh.onrender.com/ws`
+      : 'ws://localhost:5002/ws';
+    
+    const ws = new WebSocket(wsUrl);
     setSocket(ws);
 
     ws.onmessage = (event) => {
