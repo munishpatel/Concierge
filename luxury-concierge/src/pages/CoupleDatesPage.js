@@ -19,7 +19,7 @@ const CoupleDatesPage = () => {
 
     // Correct WebSocket connection with explicit path
     const wsUrl = process.env.NODE_ENV === 'production' 
-      ? `wss://https://concierge-yyeh.onrender.com/ws`
+      ? `wss://concierge-yyeh.onrender.com/ws`
       : 'ws://localhost:5002/ws';
     
     const ws = new WebSocket(wsUrl);
